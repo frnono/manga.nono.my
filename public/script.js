@@ -1,4 +1,4 @@
-const API_BASE = 'https://api.mangadex.org';
+const API_BASE = '/api';  // Updated to use local proxy
 const statusElement = document.getElementById('status');
 const progress = document.getElementById('progress');
 const progressBar = document.getElementById('progress-bar');
@@ -45,7 +45,7 @@ async function getChapterInfo(chapterId) {
 }
 
 async function getChapterPages(chapterId) {
-    const response = await fetchWithRetry(`${API_BASE}/at-home/server/${chapterId}`, { signal: abortController.signal });
+    const response = await fetchWithRetry(`${API_BASE}/chapter-pages/${chapterId}`, { signal: abortController.signal });
     return {
         baseUrl: response.baseUrl,
         hash: response.chapter.hash,
@@ -54,7 +54,8 @@ async function getChapterPages(chapterId) {
 }
 
 async function downloadImage(url, options = {}) {
-    const response = await fetch(url, options);
+    const proxyUrl = `${API_BASE}/image?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl, options);
     const blob = await response.blob();
     return blob;
 }
@@ -215,7 +216,7 @@ async function handleBatchDownload(mangaId, language, signal) {
     const endChapter = parseFloat(document.getElementById('endChapter').value) || null;
 
     const statusContainer = document.getElementById('chapterStatus');
-    statusContainer.innerHTML = ''; // Clear any previous messages
+    statusContainer.innerHTML = '';
 
     const chapterStatusElement = document.createElement('div');
     statusContainer.appendChild(chapterStatusElement);
@@ -255,7 +256,6 @@ document.getElementById('download').addEventListener('click', async function () 
             const url = document.getElementById('mangaUrl').value.trim();
             const language = document.getElementById('language').value.trim() || 'en';
 
-            // Regenerate AbortController for new operations
             abortController = new AbortController();
             const signal = abortController.signal;
 
@@ -281,7 +281,6 @@ document.getElementById('download').addEventListener('click', async function () 
             resetButton(button);
         }
     } else {
-        // Abort signal when "Stop!" is clicked
         abortController.abort();
         resetButton(button);
     }
