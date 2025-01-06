@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>MangaDex Download :3</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="format-options">
+            <label class="switch">
+                <input type="checkbox" id="cbz" checked>
+                <span>CBZ</span>
+            </label>
+            <label class="switch">
+                <input type="checkbox" id="pdf">
+                <span>PDF</span>
+            </label>
+        </div>
+
+        <div class="input-group compact">
+            <input type="text" id="startChapter" placeholder="Start Chapter">
+            <input type="text" id="endChapter" placeholder="End Chapter">
+            <input type="text" id="language" placeholder="Lang (default: en)" maxlength="2">
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="mangaUrl" placeholder="Enter MangaDex URL...">
+            <button id="download" class="action-button">Go!</button>
+        </div>
+
+        <div id="chapterStatus"></div>
+        <div id="status"></div>
+        <div id="progress">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
