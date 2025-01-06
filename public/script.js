@@ -132,8 +132,9 @@ async function downloadChapter(chapterId, language, signal) {
         const totalImages = pages.data.length;
 
         const imagePromises = pages.data.map((page, index) => {
-            const url = `${pages.baseUrl}/data/${pages.hash}/${page}`;
-            return downloadImage(url, { signal }).then(image => {
+            // Construct the full MangaDex URL for the image
+            const imageUrl = `${pages.baseUrl}/data/${pages.hash}/${page}`;
+            return downloadImage(imageUrl, { signal }).then(image => {
                 downloadedImages++;
                 updateProgress((downloadedImages / totalImages) * 100);
                 updateStatus(`Downloaded ${downloadedImages} of ${totalImages} images`);
@@ -156,7 +157,7 @@ async function downloadChapter(chapterId, language, signal) {
         if (document.getElementById('pdf').checked) {
             const pdf = await createPDF(images, info.mangaTitle);
             const pdfBlob = pdf.output('blob');
-
+            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(pdfBlob);
             link.download = `${info.mangaTitle} - Chapter ${info.chapterNum}.pdf`;
@@ -165,8 +166,6 @@ async function downloadChapter(chapterId, language, signal) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            updateStatus('PDF created!');
         }
 
         updateStatus('Download complete!');
@@ -175,8 +174,8 @@ async function downloadChapter(chapterId, language, signal) {
             updateStatus('Download Aborted.');
         } else {
             updateStatus(`Error: ${error.message}`);
+            console.error('Download error:', error);
         }
-        console.error(error);
     }
 }
 
