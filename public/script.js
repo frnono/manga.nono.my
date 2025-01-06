@@ -54,10 +54,11 @@ async function getChapterPages(chapterId) {
 }
 
 async function downloadImage(url, options = {}) {
-    const response = await fetch(url, options);
+    const proxiedUrl = `/image?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxiedUrl, options);
     const blob = await response.blob();
     return blob;
-}
+  }
 
 async function createCBZ(images, title) {
     const zip = new JSZip();
