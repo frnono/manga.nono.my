@@ -1,4 +1,4 @@
-const API_BASE = '/api';  // Updated to use local proxy
+const API_BASE = '/api';
 const statusElement = document.getElementById('status');
 const progress = document.getElementById('progress');
 const progressBar = document.getElementById('progress-bar');
@@ -45,7 +45,7 @@ async function getChapterInfo(chapterId) {
 }
 
 async function getChapterPages(chapterId) {
-    const response = await fetchWithRetry(`${API_BASE}/chapter-pages/${chapterId}`, { signal: abortController.signal });
+    const response = await fetchWithRetry(`${API_BASE}/at-home/server/${chapterId}`, { signal: abortController.signal });
     return {
         baseUrl: response.baseUrl,
         hash: response.chapter.hash,
@@ -54,8 +54,7 @@ async function getChapterPages(chapterId) {
 }
 
 async function downloadImage(url, options = {}) {
-    const proxyUrl = `${API_BASE}/image?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl, options);
+    const response = await fetch(url, options);
     const blob = await response.blob();
     return blob;
 }
@@ -132,9 +131,8 @@ async function downloadChapter(chapterId, language, signal) {
         const totalImages = pages.data.length;
 
         const imagePromises = pages.data.map((page, index) => {
-            // Construct the full MangaDex URL for the image
-            const imageUrl = `${pages.baseUrl}/data/${pages.hash}/${page}`;
-            return downloadImage(imageUrl, { signal }).then(image => {
+            const url = `${pages.baseUrl}/data/${pages.hash}/${page}`;
+            return downloadImage(url, { signal }).then(image => {
                 downloadedImages++;
                 updateProgress((downloadedImages / totalImages) * 100);
                 updateStatus(`Downloaded ${downloadedImages} of ${totalImages} images`);
@@ -157,7 +155,7 @@ async function downloadChapter(chapterId, language, signal) {
         if (document.getElementById('pdf').checked) {
             const pdf = await createPDF(images, info.mangaTitle);
             const pdfBlob = pdf.output('blob');
-            
+
             const link = document.createElement('a');
             link.href = URL.createObjectURL(pdfBlob);
             link.download = `${info.mangaTitle} - Chapter ${info.chapterNum}.pdf`;
@@ -166,6 +164,8 @@ async function downloadChapter(chapterId, language, signal) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            updateStatus('PDF created!');
         }
 
         updateStatus('Download complete!');
@@ -174,8 +174,8 @@ async function downloadChapter(chapterId, language, signal) {
             updateStatus('Download Aborted.');
         } else {
             updateStatus(`Error: ${error.message}`);
-            console.error('Download error:', error);
         }
+        console.error(error);
     }
 }
 
@@ -215,7 +215,7 @@ async function handleBatchDownload(mangaId, language, signal) {
     const endChapter = parseFloat(document.getElementById('endChapter').value) || null;
 
     const statusContainer = document.getElementById('chapterStatus');
-    statusContainer.innerHTML = '';
+    statusContainer.innerHTML = ''; // Clear any previous messages
 
     const chapterStatusElement = document.createElement('div');
     statusContainer.appendChild(chapterStatusElement);
@@ -255,6 +255,7 @@ document.getElementById('download').addEventListener('click', async function () 
             const url = document.getElementById('mangaUrl').value.trim();
             const language = document.getElementById('language').value.trim() || 'en';
 
+            // Regenerate AbortController for new operations
             abortController = new AbortController();
             const signal = abortController.signal;
 
@@ -280,6 +281,7 @@ document.getElementById('download').addEventListener('click', async function () 
             resetButton(button);
         }
     } else {
+        // Abort signal when "Stop!" is clicked
         abortController.abort();
         resetButton(button);
     }

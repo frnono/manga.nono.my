@@ -10,8 +10,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.21.2",
-    "node-fetch": "^2.7.0"
+    "http-proxy-middleware": "^3.0.3",
+    "install": "^0.13.0",
+    "npm": "^11.0.0"
   }
 }
