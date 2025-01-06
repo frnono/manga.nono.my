@@ -17,7 +17,7 @@ app.get('/api/*', async (req, res) => {
   try {
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'YourCustomUserAgent/1.0'
+        'User-Agent': 'manga.nono.my/0.1.5'
       }
     });
     
