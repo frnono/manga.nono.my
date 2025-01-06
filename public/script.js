@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_PROXY = '/api';
 const statusElement = document.getElementById('status');
 const progress = document.getElementById('progress');
 const progressBar = document.getElementById('progress-bar');
@@ -16,7 +16,7 @@ function updateProgress(percent) {
 async function fetchWithRetry(url, options = {}, retries = 3) {
     try {
         options.signal?.throwIfAborted();
-        const response = await fetch(url, options);
+        const response = await fetch(`${API_PROXY}${url}`, options);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     } catch (error) {
@@ -29,12 +29,12 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
 }
 
 async function getMangaTitle(mangaId) {
-    const response = await fetchWithRetry(`${API_BASE}/manga/${mangaId}`, { signal: abortController.signal });
+    const response = await fetchWithRetry(`/manga/${mangaId}`, { signal: abortController.signal });
     return response.data.attributes.title.en || response.data.attributes.title['ja-ro'];
 }
 
 async function getChapterInfo(chapterId) {
-    const response = await fetchWithRetry(`${API_BASE}/chapter/${chapterId}`, { signal: abortController.signal });
+    const response = await fetchWithRetry(`/chapter/${chapterId}`, { signal: abortController.signal });
     const mangaId = response.data.relationships.find(rel => rel.type === 'manga').id;
     const mangaTitle = await getMangaTitle(mangaId);
     return {
@@ -45,7 +45,7 @@ async function getChapterInfo(chapterId) {
 }
 
 async function getChapterPages(chapterId) {
-    const response = await fetchWithRetry(`${API_BASE}/at-home/server/${chapterId}`, { signal: abortController.signal });
+    const response = await fetchWithRetry(`/at-home/server/${chapterId}`, { signal: abortController.signal });
     return {
         baseUrl: response.baseUrl,
         hash: response.chapter.hash,
@@ -185,7 +185,7 @@ async function getChapterList(mangaId, startChapter, endChapter, language, signa
 
     while (true) {
         const response = await fetchWithRetry(
-            `${API_BASE}/manga/${mangaId}/feed?limit=500&offset=${offset}&translatedLanguage[]=${language}`,
+            `/manga/${mangaId}/feed?limit=500&offset=${offset}&translatedLanguage[]=${language}`,
             { signal }
         );
 
