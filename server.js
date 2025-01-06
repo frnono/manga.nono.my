@@ -37,24 +37,27 @@ app.get('/api/*', async (req, res) => {
 // Proxy route for image requests
 app.get('/image', async (req, res) => {
   const imageUrl = req.query.url;
-  
+
   if (!imageUrl) {
     return res.status(400).send('Image URL is required');
   }
 
   try {
-    const response = await fetch(imageUrl, {
+    // Attempt to fetch the image from the provided URL
+    const imageResponse = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'YourCustomUserAgent/1.0'
+        'User-Agent': 'YourCustomUserAgent/1.0' // Adjust this as necessary for compliance
       }
     });
 
-    if (!response.ok) {
-      console.log(`Error response for image: ${response.status} ${response.statusText}`);
-      return res.status(response.status).send(`Error fetching image: ${response.statusText}`);
+    if (!imageResponse.ok) {
+      console.log(`Error fetching image: ${imageResponse.status} ${imageResponse.statusText}`);
+      return res.status(imageResponse.status).send(`Error fetching image: ${imageResponse.statusText}`);
     }
 
-    response.body.pipe(res);
+    // Stream the image response to the client
+    res.setHeader('Content-Type', imageResponse.headers.get('Content-Type'));
+    imageResponse.body.pipe(res);
   } catch (error) {
     console.error('Image proxy error:', error);
     res.status(500).send('Image proxy error');
