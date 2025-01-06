@@ -1,9 +1,10 @@
 :root {
     --primary-color: #d2ace8;
-    --bg-color: #2B2A33;
-    --text-color: #ffffff;
+    --bg-color: #1e1c24;
+    --text-color: #e2d4ee;
     --border-color: #4a4a4a;
-    --dark-purple: #6c5c75; 
+    --dark-purple: #6c5c75;
+    --light-purple: #ab80d1;
 }
 
 body {
@@ -11,41 +12,152 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.title-container {
+    animation: slideIn 1s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.title {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: var(--dark-purple);
+}
+
+.main-content {
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+}
+
+.url-input-group {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background-image: linear-gradient(135deg, #2B2A33 40%, #3f2f52);
-}
-
-.container {
-    max-width: 700px;
-    width: 100%;
-    padding: 30px;
-    box-sizing: border-box;
-    background-color: rgba(63, 47, 82, 0.9);
-    border-radius: 15px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-}
-
-.format-options, .input-group {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
+.url-input {
+    flex: 1;
+    padding: 15px;
+    font-size: 1rem;
+    border-radius: 40px;
+    border: 2px solid var(--dark-purple);
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.url-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.action-button {
+    padding: 15px 25px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 30px;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.action-button:hover {
+    background-color: var(--light-purple);
+    transform: translateY(-2px);
+}
+
+.action-button.stop {
+    background-color: #ff6c6c; 
+    color: white; 
+}
+
+.settings {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.details summary {
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
 .input-group.compact {
-    justify-content: space-between;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.input-group > input[type='text'] {
+    padding: 10px;
+    border: 2px solid var(--dark-purple);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    flex: 1;
+    min-width: 80px;
+    transition: border-color 0.3s;
+}
+
+.input-group > input[type='text']:focus {
+    border-color: var(--primary-color);
+}
+
+#progress {
+    width: 100%;
+    height: 8px;
+    background-color: var(--dark-purple);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s;
+}
+
+#status, #chapterStatus {
+    margin-top: 20px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.format-options {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
 }
 
 .switch {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--primary-color);
+    color: var(--text2-color);
 }
 
 .switch input {
@@ -58,6 +170,7 @@ body {
     cursor: pointer;
     outline: none;
     transition: background-color 0.3s;
+    margin: 0;
 }
 
 .switch input:checked {
@@ -78,86 +191,4 @@ body {
 
 .switch input:checked:before {
     transform: translateX(18px);
-}
-
-.input-group > input[type='text'] {
-    padding: 8px 10px;
-    border: 2px solid var(--dark-purple);
-    border-radius: 6px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    flex: 1;
-    min-width: 100px;
-    transition: border-color 0.3s;
-}
-
-.input-group.compact > input[type='text'] {
-    flex: 0 0 80px;
-    min-width: auto;
-}
-
-.input-group > input[type='text']:focus {
-    border-color: var(--primary-color);
-}
-
-.input-group > input[type='text']::placeholder {
-    color: #bbb;
-}
-
-button {
-    padding: 10px 15px;
-    border: 2px solid var(--primary-color);
-    border-radius: 6px;
-    background-color: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-button:hover {
-    background-color: var(--primary-color);
-    color: #2B2A33;
-}
-
-#status, #chapterStatus {
-    margin-top: 20px;
-    color: var(--primary-color);
-    text-align: center;
-    font-weight: 500;
-}
-
-#progress {
-    width: 100%;
-    height: 8px;
-    background-color: var(--dark-purple);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 15px;
-}
-
-#progress-bar {
-    width: 0%;
-    height: 100%;
-    background-color: var(--primary-color);
-    transition: width 0.3s;
-}
-
-.action-button {
-    flex-shrink: 0;
-    background-color: #d2ace8;
-    color: #2B2A33;
-    padding: 10px 20px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-.action-button:hover {
-    background-color: #ab80d1;
-}
-
-.action-button.stop {
-    background-color: #ff6c6c;
 }
