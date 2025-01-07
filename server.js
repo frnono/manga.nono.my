@@ -46,7 +46,7 @@ app.get('/image', async (req, res) => {
     // Attempt to fetch the image from the provided URL
     const imageResponse = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'YourCustomUserAgent/1.0' // Adjust this as necessary for compliance
+        'User-Agent': 'manga.nono.my/1.0' // Adjust this as necessary for compliance
       }
     });
 

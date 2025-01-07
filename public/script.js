@@ -169,7 +169,6 @@ async function downloadChapter(chapterId, language, signal) {
             updateStatus('PDF created!');
         }
 
-        createInteractiveBall()
         updateStatus('Download complete!');
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -181,35 +180,86 @@ async function downloadChapter(chapterId, language, signal) {
     }
 }
 
-async function getChapterList(mangaId, startChapter, endChapter, language, signal) {
-    const chapters = [];
+async function getChapterList(mangaId, startChapter, endChapter, language = 'en', signal) {
+    const chapterList = [];
+    const seenChapters = new Set();
     let offset = 0;
+    const limit = 500;
+    const contentRatings = ['safe', 'suggestive', 'erotica', 'pornographic'];
+
+    const apiBaseUrl = 'https://api.mangadex.org';
 
     while (true) {
-        const response = await fetchWithRetry(
-            `/manga/${mangaId}/feed?limit=500&offset=${offset}&translatedLanguage[]=${language}`,
-            { signal }
-        );
+        // Setting up the query parameters
+        const params = new URLSearchParams({
+            limit: limit.toString(),
+            offset: offset.toString(),
+            'translatedLanguage[]': language
+        });
 
-        const newChapters = response.data
-            .filter(chapter => {
-                const num = parseFloat(chapter.attributes.chapter);
-                return (!startChapter || num >= startChapter) &&
-                    (!endChapter || num <= endChapter) &&
-                    !chapter.attributes.externalUrl;
-            })
-            .map(chapter => ({
-                id: chapter.id,
-                num: parseFloat(chapter.attributes.chapter)
-            }));
+        contentRatings.forEach(rating => {
+            params.append('contentRating[]', rating);
+        });
 
-        chapters.push(...newChapters);
+        const url = `${apiBaseUrl}/manga/${mangaId}/feed?${params.toString()}`;
+        console.log(`Fetching: ${url}`);
 
-        if (!response.links || !response.links.next) break;
-        offset += 500;
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.api+json',
+                    'User-Agent': 'manga-fetch-agent'  // Adjust this user agent to conform to API requirements
+                },
+                signal: signal
+            });
+
+            if (!response.ok) {
+                console.error(`Error fetching data: ${response.status} - ${response.statusText}`);
+                break;
+            }
+
+            const data = await response.json();
+
+            const chaptersData = data.data || [];
+            for (const chapterData of chaptersData) {
+                const chapterId = chapterData.id;
+                const chapterNum = chapterData.attributes.chapter;
+                const externalChapter = chapterData.attributes.externalUrl;
+
+                // Skip if: chapterNum is not set, it's already seen, or has external URL
+                if (!chapterNum || seenChapters.has(chapterNum) || externalChapter) {
+                    continue;
+                }
+
+                const chapterNumFloat = parseFloat(chapterNum);
+                if (isNaN(chapterNumFloat)) continue;
+
+                // Skip chapters not within the specified range
+                if (startChapter != null && chapterNumFloat < startChapter) continue;
+                if (endChapter != null && chapterNumFloat > endChapter) continue;
+
+                chapterList.push([chapterId, chapterNum]);
+                seenChapters.add(chapterNum);
+            }
+
+            const nextLink = data.links?.next;
+            if (!nextLink) {
+                break;
+            }
+
+            offset += limit;
+        } catch (error) {
+            console.error(`Fetch error: ${error.message}`);
+            break;
+        }
     }
 
-    return chapters.sort((a, b) => a.num - b.num).map(c => c.id);
+    // Sort the chapters based on chapter number
+    chapterList.sort((a, b) => parseFloat(a[1]) - parseFloat(b[1]));
+
+    // Extract and return sorted chapter IDs
+    return chapterList.map(chapter => chapter[0]);
 }
 
 async function handleBatchDownload(mangaId, language, signal) {
