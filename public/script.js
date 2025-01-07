@@ -54,11 +54,11 @@ async function getChapterPages(chapterId) {
 }
 
 async function downloadImage(url, options = {}) {
-    const proxiedUrl = `/image?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxiedUrl, options);
-    const blob = await response.blob();
-    return blob;
-  }
+  const proxiedUrl = `/image?url=${encodeURIComponent(url)}`;
+  const response = await fetch(proxiedUrl, options);
+  const blob = await response.blob();
+  return blob;
+}
 
 async function createCBZ(images, title) {
     const zip = new JSZip();
@@ -169,6 +169,7 @@ async function downloadChapter(chapterId, language, signal) {
             updateStatus('PDF created!');
         }
 
+        createInteractiveBall()
         updateStatus('Download complete!');
     } catch (error) {
         if (error.name === 'AbortError') {

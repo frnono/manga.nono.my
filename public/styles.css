@@ -22,6 +22,10 @@ body {
 }
 
 .title-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
     animation: slideIn 1s ease-out;
 }
 
@@ -37,7 +41,8 @@ body {
 }
 
 .title {
-    font-size: 2.5rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.727rem;
     margin-bottom: 20px;
     color: var(--dark-purple);
 }
@@ -72,7 +77,8 @@ body {
 }
 
 .action-button {
-    padding: 15px 25px;
+    width: 75px; /* Ensures consistent button width */
+    padding: 15px 20px;
     font-size: 1rem;
     border: none;
     border-radius: 30px;
@@ -80,6 +86,7 @@ body {
     color: white;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
+    text-align: center;
 }
 
 .action-button:hover {
@@ -191,4 +198,14 @@ body {
 
 .switch input:checked:before {
     transform: translateX(18px);
+}
+.interactive-ball {
+    position: absolute;
+    border-radius: 50%;
+    cursor: grab;
+    transition: transform 0.2s;
+}
+
+.interactive-ball:active {
+    cursor: grabbing;
 }
