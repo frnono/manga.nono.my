@@ -187,7 +187,7 @@ async function getChapterList(mangaId, startChapter, endChapter, language = 'en'
     const limit = 500;
     const contentRatings = ['safe', 'suggestive', 'erotica', 'pornographic'];
 
-    const apiBaseUrl = 'https://api.mangadex.org';
+    const apiBaseUrl = API_PROXY;
 
     while (true) {
         // Setting up the query parameters
