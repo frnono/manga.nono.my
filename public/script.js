@@ -15,8 +15,20 @@ function updateProgress(percent) {
 
 async function fetchWithRetry(url, options = {}, retries = 3) {
     try {
+        // Ensure abort signaling is operational
         options.signal?.throwIfAborted();
-        const response = await fetch(`${API_PROXY}${url}`, options);
+
+        // Constructing the query parameters string
+        const queryParams = new URLSearchParams({
+            ...options.params, // This should include query parameters you need
+            'translatedLanguage[]': options.language || 'en'  // Set language filter
+        }).toString();
+
+        // Constructing the full URL with query parameters
+        const fullUrl = queryParams ? `${API_PROXY}${url}?${queryParams}` : `${API_PROXY}${url}`;
+
+        const response = await fetch(fullUrl, options);
+        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     } catch (error) {
@@ -187,7 +199,7 @@ async function getChapterList(mangaId, startChapter, endChapter, language = 'en'
     const limit = 500;
     const contentRatings = ['safe', 'suggestive', 'erotica', 'pornographic'];
 
-    const apiBaseUrl = API_PROXY;
+    const apiBaseUrl = 'https://api.mangadex.org';
 
     while (true) {
         // Setting up the query parameters

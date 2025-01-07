@@ -12,12 +12,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Proxy route for API requests
 app.get('/api/*', async (req, res) => {
   const apiUrl = `${API_BASE}${req.path.replace('/api', '')}`;
-  console.log(`Proxying request to: ${apiUrl}`);
+  const queryParams = new URLSearchParams(req.query).toString();
+  const fullApiUrl = queryParams ? `${apiUrl}?${queryParams}` : apiUrl;
+  
+  console.log(`Proxying request to: ${fullApiUrl}`);
   
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetch(fullApiUrl, {
       headers: {
-        'User-Agent': 'manga.nono.my/0.1.5'
+        'User-Agent': 'manga.nono.my/0.1.5' // Adjust as necessary for compliance
       }
     });
     
@@ -46,7 +49,7 @@ app.get('/image', async (req, res) => {
     // Attempt to fetch the image from the provided URL
     const imageResponse = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'manga.nono.my/1.0' // Adjust this as necessary for compliance
+        'User-Agent': 'manga.nono.my/1.0' // Adjust as necessary for compliance
       }
     });
 
