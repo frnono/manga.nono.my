@@ -15,20 +15,8 @@ function updateProgress(percent) {
 
 async function fetchWithRetry(url, options = {}, retries = 3) {
     try {
-        // Ensure abort signaling is operational
         options.signal?.throwIfAborted();
-
-        // Constructing the query parameters string
-        const queryParams = new URLSearchParams({
-            ...options.params, // This should include query parameters you need
-            'translatedLanguage[]': options.language || 'en'  // Set language filter
-        }).toString();
-
-        // Constructing the full URL with query parameters
-        const fullUrl = queryParams ? `${API_PROXY}${url}?${queryParams}` : `${API_PROXY}${url}`;
-
-        const response = await fetch(fullUrl, options);
-        
+        const response = await fetch(`${API_PROXY}${url}`, options);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     } catch (error) {
