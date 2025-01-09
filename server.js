@@ -11,26 +11,46 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Proxy route for API requests
 app.get('/api/*', async (req, res) => {
-  const apiUrl = `${API_BASE}${req.path.replace('/api', '')}`;
-  console.log(`Proxying request to: ${apiUrl}`);
-  
   try {
+    // Reconstruct the full URL including all query parameters
+    const originalUrl = new URL(req.url, `http://${req.headers.host}`);
+    const queryString = originalUrl.search; // Includes the "?" and query parameters
+
+    const apiUrl = `${API_BASE}${req.path.replace('/api', '')}${queryString}`;
+    
+    // Log the reconstructed API URL
+    console.log(`[Proxy] Reconstructed API URL: ${apiUrl}`);
+    
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'manga.nono.my/0.1.5'
+        'User-Agent': 'manga.nono.my/0.1.5',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     
     if (!response.ok) {
-      console.log(`Error response from MangaDex: ${response.status} ${response.statusText}`);
-      return res.status(response.status).json({ error: `MangaDex error: ${response.statusText}` });
+      console.log(`[Proxy] Error from MangaDex: ${response.status} ${response.statusText}`);
+      return res.status(response.status).json({ 
+        error: `MangaDex error: ${response.statusText}`,
+        details: await response.text()
+      });
     }
 
     const data = await response.json();
+    
+    // Log the response metadata
+    console.log(`[Proxy] Response status: ${response.status}`);
+    
+    // Forward the complete response
     res.status(response.status).json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
-    res.status(500).send('Proxy error');
+    console.error('[Proxy] Error:', error);
+    res.status(500).json({ 
+      error: 'Proxy error', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -46,7 +66,7 @@ app.get('/image', async (req, res) => {
     // Attempt to fetch the image from the provided URL
     const imageResponse = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'manga.nono.my/1.0' // Adjust this as necessary for compliance
+        'User-Agent': 'manga.nono.my/1.0'
       }
     });
 
