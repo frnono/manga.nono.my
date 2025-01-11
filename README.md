@@ -1,6 +1,6 @@
 # manga.nono.my
 
-manga.nono.my is a web application that enables users to easliy download manga chapters from MangaDex using its API.
+[manga.nono.my](https://manga.nono.my) is a web application that enables users to easliy download manga chapters from MangaDex using its API.
 
 ## Features
 
