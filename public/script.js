@@ -71,32 +71,34 @@ async function createCBZ(images, title) {
 async function createPDF(images, title) {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
 
     for (let i = 0; i < images.length; i++) {
+        // Create an image object
         const imageData = URL.createObjectURL(images[i]);
         const img = new Image();
         img.src = imageData;
 
         await new Promise((resolve) => {
             img.onload = () => {
-                const imgProps = {
-                    width: img.naturalWidth,
-                    height: img.naturalHeight
-                };
+                const imgWidth = img.naturalWidth;
+                const imgHeight = img.naturalHeight;
 
-                const dimensions = fitImageToPage(imgProps, pageWidth, pageHeight);
-
+                // Set the PDF page size to match the image dimensions
+                pdf.setPage(i + 1);
+                pdf.internal.pageSize.setWidth(imgWidth);
+                pdf.internal.pageSize.setHeight(imgHeight);
+                
+                // Add the image at full size
                 pdf.addImage(
                     img,
                     'PNG',
-                    (pageWidth - dimensions.width) / 2,
-                    (pageHeight - dimensions.height) / 2,
-                    dimensions.width,
-                    dimensions.height
+                    0, // No horizontal offset
+                    0, // No vertical offset
+                    imgWidth,
+                    imgHeight
                 );
 
+                // Add a new page unless it's the last image
                 if (i < images.length - 1) pdf.addPage();
                 resolve();
             };
@@ -104,23 +106,6 @@ async function createPDF(images, title) {
     }
 
     return pdf;
-}
-
-function fitImageToPage(imgProps, pageWidth, pageHeight) {
-    const aspectRatio = imgProps.width / imgProps.height;
-    let targetWidth = pageWidth;
-    let targetHeight = pageHeight;
-
-    if (targetWidth / aspectRatio <= pageHeight) {
-        targetHeight = targetWidth / aspectRatio;
-    } else {
-        targetWidth = targetHeight * aspectRatio;
-    }
-
-    return {
-        width: targetWidth,
-        height: targetHeight
-    };
 }
 
 async function downloadChapter(chapterId, language, signal) {
