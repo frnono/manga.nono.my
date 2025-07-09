@@ -19,33 +19,106 @@
             <input type="text" id="mangaUrl" placeholder="Enter MangaDex URL..." class="url-input">
             <button id="download" class="action-button">Go!</button>
         </div>
-
-        <details class="settings">
+        
+        <!-- Format Options OUTSIDE Advanced Settings -->
+        <div class="format-options" style="margin-bottom:16px;">
+            <label class="switch">
+                <input type="checkbox" id="cbz" checked>
+                <span>CBZ</span>
+            </label>
+            <label class="switch">
+                <input type="checkbox" id="pdf">
+                <span>PDF</span>
+            </label>
+        </div>
+        
+        <details class="settings" open>
             <summary>Advanced Settings</summary>
-            <div class="input-group compact">
-                <input type="text" id="startChapter" placeholder="Start Chapter">
-                <input type="text" id="endChapter" placeholder="End Chapter">
-                <input type="text" id="language" placeholder="Language (default: en)" maxlength="2">
-            </div>
-            <div class="format-options">
+            
+            <!-- Chapter/Volume Toggle -->
+            <div class="mode-toggle">
+                <span id="chapterLabel" class="active-label">Chapter</span>
                 <label class="switch">
-                    <input type="checkbox" id="cbz" checked>
-                    <span>CBZ</span>
+                    <input type="checkbox" id="modeSwitch">
+                    <span class="slider"></span>
                 </label>
+                <span id="volumeLabel">Volume</span>
+            </div>
+            
+            <div class="settings-fields">
+                <!-- Chapter Inputs -->
+                <div id="chapter-fields">
+                    <div class="input-row">
+                        <label for="startChapter">Start Chapter</label>
+                        <input type="text" id="startChapter" placeholder="e.g. 1">
+                    </div>
+                    <div class="input-row">
+                        <label for="endChapter">End Chapter</label>
+                        <input type="text" id="endChapter" placeholder="e.g. 12">
+                    </div>
+                </div>
+                
+                <!-- Volume Inputs -->
+                <div id="volume-fields" style="display:none;">
+                    <div class="input-row">
+                        <label for="startVolume">Start Volume</label>
+                        <input type="text" id="startVolume" placeholder="e.g. 1">
+                    </div>
+                    <div class="input-row">
+                        <label for="endVolume">End Volume</label>
+                        <input type="text" id="endVolume" placeholder="e.g. 3">
+                    </div>
+                </div>
+                
+                <!-- Language Always Shows -->
+                <div class="input-row">
+                    <label for="language">Language</label>
+                    <input type="text" id="language" placeholder="en" maxlength="2">
+                </div>
+            </div>
+            <div class="format-options format-options-single">
                 <label class="switch">
-                    <input type="checkbox" id="pdf">
-                    <span>PDF</span>
+                    <input type="checkbox" id="includeVolume">
+                    <span>Vol. in title</span>
                 </label>         
             </div>
         </details>
-
+        
         <div id="progress">
             <div id="progress-bar"></div>
         </div>
         <div id="chapterStatus"></div>
         <div id="status"></div>
     </div>
-
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modeSwitch = document.getElementById('modeSwitch');
+        const chapterFields = document.getElementById('chapter-fields');
+        const volumeFields = document.getElementById('volume-fields');
+        const chapterLabel = document.getElementById('chapterLabel');
+        const volumeLabel = document.getElementById('volumeLabel');
+    
+        function updateFields() {
+            if (!modeSwitch.checked) {
+                chapterFields.style.display = '';
+                volumeFields.style.display = 'none';
+                chapterLabel.classList.add('active-label');
+                volumeLabel.classList.remove('active-label');
+                document.getElementById('startVolume').value = '';
+                document.getElementById('endVolume').value = '';
+            } else {
+                chapterFields.style.display = 'none';
+                volumeFields.style.display = '';
+                chapterLabel.classList.remove('active-label');
+                volumeLabel.classList.add('active-label');
+                document.getElementById('startChapter').value = '';
+                document.getElementById('endChapter').value = '';
+            }
+        }
+        modeSwitch.addEventListener('change', updateFields);
+        updateFields(); // Set initial state
+    });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

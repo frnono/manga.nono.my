@@ -23,7 +23,7 @@ app.get('/api/*', async (req, res) => {
     
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'manga.nono.my/0.1.5',
+        'User-Agent': 'manga.nono.my/0.2',
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }

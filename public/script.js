@@ -40,7 +40,8 @@ async function getChapterInfo(chapterId) {
     return {
         mangaTitle,
         chapterTitle: response.data.attributes.title,
-        chapterNum: response.data.attributes.chapter
+        chapterNum: response.data.attributes.chapter,
+        volume: response.data.attributes.volume
     };
 }
 
@@ -53,11 +54,24 @@ async function getChapterPages(chapterId) {
     };
 }
 
+function generateFileName(info) {
+    const includeVolume = document.getElementById('includeVolume').checked;
+    let fileName = info.mangaTitle;
+    
+    if (includeVolume && info.volume) {
+        fileName += ` (Vol. ${info.volume})`;
+    }
+    
+    fileName += ` - Chapter ${info.chapterNum}`;
+    
+    return fileName;
+}
+
 async function downloadImage(url, options = {}) {
-  const proxiedUrl = `/image?url=${encodeURIComponent(url)}`;
-  const response = await fetch(proxiedUrl, options);
-  const blob = await response.blob();
-  return blob;
+    const proxiedUrl = `/image?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxiedUrl, options);
+    const blob = await response.blob();
+    return blob;
 }
 
 async function createCBZ(images, title) {
@@ -73,7 +87,6 @@ async function createPDF(images, title) {
     const pdf = new jsPDF();
 
     for (let i = 0; i < images.length; i++) {
-        // Create an image object
         const imageData = URL.createObjectURL(images[i]);
         const img = new Image();
         img.src = imageData;
@@ -83,22 +96,19 @@ async function createPDF(images, title) {
                 const imgWidth = img.naturalWidth;
                 const imgHeight = img.naturalHeight;
 
-                // Set the PDF page size to match the image dimensions
                 pdf.setPage(i + 1);
                 pdf.internal.pageSize.setWidth(imgWidth);
                 pdf.internal.pageSize.setHeight(imgHeight);
                 
-                // Add the image at full size
                 pdf.addImage(
                     img,
                     'PNG',
-                    0, // No horizontal offset
-                    0, // No vertical offset
+                    0,
+                    0,
                     imgWidth,
                     imgHeight
                 );
 
-                // Add a new page unless it's the last image
                 if (i < images.length - 1) pdf.addPage();
                 resolve();
             };
@@ -108,67 +118,66 @@ async function createPDF(images, title) {
     return pdf;
 }
 
-async function downloadChapter(chapterId, language, signal) {
-    try {
-        const info = await getChapterInfo(chapterId);
-        const pages = await getChapterPages(chapterId);
+async function downloadChapter(chapterId, language, signal, chapterIndex = null, totalChapters = null) {
+    const info = await getChapterInfo(chapterId);
+    const pages = await getChapterPages(chapterId);
 
-        let downloadedImages = 0;
-        const totalImages = pages.data.length;
+    let downloadedImages = 0;
+    const totalImages = pages.data.length;
 
-        const imagePromises = pages.data.map((page, index) => {
-            const url = `${pages.baseUrl}/data/${pages.hash}/${page}`;
-            return downloadImage(url, { signal }).then(image => {
-                downloadedImages++;
-                updateProgress((downloadedImages / totalImages) * 100);
+    const imagePromises = pages.data.map((page, index) => {
+        const url = `${pages.baseUrl}/data/${pages.hash}/${page}`;
+        return downloadImage(url, { signal }).then(image => {
+            downloadedImages++;
+            updateProgress((downloadedImages / totalImages) * 100);
+            
+            if (chapterIndex !== null && totalChapters !== null) {
+                updateStatus(`Chapter ${chapterIndex}/${totalChapters} - Downloaded ${downloadedImages}/${totalImages} images`);
+            } else {
                 updateStatus(`Downloaded ${downloadedImages} of ${totalImages} images`);
-                return image;
-            });
+            }
+            return image;
         });
+    });
 
-        const images = await Promise.all(imagePromises);
+    const images = await Promise.all(imagePromises);
+    updateStatus('Creating files...');
 
-        updateStatus('Creating files...');
+    const fileName = generateFileName(info);
 
-        if (document.getElementById('cbz').checked) {
-            const cbz = await createCBZ(images, info.mangaTitle);
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(cbz);
-            link.download = `${info.mangaTitle} - Chapter ${info.chapterNum}.cbz`;
-            link.click();
-        }
-
-        if (document.getElementById('pdf').checked) {
-            const pdf = await createPDF(images, info.mangaTitle);
-            const pdfBlob = pdf.output('blob');
-
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(pdfBlob);
-            link.download = `${info.mangaTitle} - Chapter ${info.chapterNum}.pdf`;
-            link.style.display = 'none';
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            updateStatus('PDF created!');
-        }
-
-        updateStatus('Download complete!');
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            updateStatus('Download Aborted.');
-        } else {
-            updateStatus(`Error: ${error.message}`);
-        }
-        console.error(error);
+    if (document.getElementById('cbz').checked) {
+        const cbz = await createCBZ(images, info.mangaTitle);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(cbz);
+        link.download = `${fileName}.cbz`;
+        link.click();
     }
+
+    if (document.getElementById('pdf').checked) {
+        const pdf = await createPDF(images, info.mangaTitle);
+        const pdfBlob = pdf.output('blob');
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        link.download = `${fileName}.pdf`;
+        link.style.display = 'none';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Always update status to show completion - batch downloads will override this later
+    updateStatus('Download completed!');
+
+    return {
+        success: true,
+        chapterNum: info.chapterNum,
+        fileName: fileName
+    };
 }
 
-async function getChapterList(mangaId, startChapter, endChapter, language = 'en', signal) {
-    console.clear(); // Clear previous logs
-    console.log('%c Manga Chapter Fetcher Started ', 'background: #333; color: #fff');
-    
+async function getChapterList(mangaId, startChapter, endChapter, startVolume, endVolume, language = 'en', signal) {
     const chapterList = [];
     const seenChapters = new Set();
     let offset = 0;
@@ -180,7 +189,8 @@ async function getChapterList(mangaId, startChapter, endChapter, language = 'en'
         const params = new URLSearchParams({
             limit: limit.toString(),
             offset: offset.toString(),
-            'translatedLanguage[]': language
+            'translatedLanguage[]': language,
+            'order[chapter]': 'asc'
         });
         
         contentRatings.forEach(rating => {
@@ -188,8 +198,6 @@ async function getChapterList(mangaId, startChapter, endChapter, language = 'en'
         });
 
         const url = `${apiBaseUrl}/manga/${mangaId}/feed?${params.toString()}`;
-        console.log(`%c📡 Request ${offset/100 + 1}`, 'color: #2196F3; font-weight: bold');
-        console.log(`URL: ${url}`);
 
         try {
             const response = await fetch(url, {
@@ -202,65 +210,93 @@ async function getChapterList(mangaId, startChapter, endChapter, language = 'en'
             });
 
             if (!response.ok) {
-                console.error(`❌ HTTP Error: ${response.status}`);
                 break;
             }
 
             const data = await response.json();
             const chaptersData = data.data || [];
-            console.log(`%c✅ Received ${chaptersData.length} chapters`, 'color: #4CAF50');
 
-            let addedInThisBatch = 0;
             for (const chapterData of chaptersData) {
-                if (processChapter(chapterData)) addedInThisBatch++;
+                processChapter(chapterData);
             }
-            console.log(`%c📚 Added ${addedInThisBatch} new chapters`, 'color: #9C27B0');
 
             if (chaptersData.length < limit) {
-                console.log('%c🏁 End of chapters reached', 'color: #FF9800');
                 break;
             }
 
             offset += limit;
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
         } catch (error) {
-            console.error('%c❌ Error:', 'color: #f44336', error);
-            console.log('Stack:', error.stack);
             break;
         }
     }
 
-    console.log(`%c🎉 Total chapters: ${chapterList.length}`, 'color: #4CAF50; font-weight: bold');
     return chapterList
         .sort((a, b) => parseFloat(a[1]) - parseFloat(b[1]))
-        .map(chapter => chapter[0]);
+        .map(chapter => ({ id: chapter[0], num: chapter[1] }));
 
     function processChapter(chapterData) {
         const chapterId = chapterData.id;
         const chapterNum = chapterData.attributes.chapter;
+        const volumeNum = chapterData.attributes.volume;
         const externalChapter = chapterData.attributes.externalUrl;
 
-        if (!chapterNum || seenChapters.has(chapterNum) || externalChapter) return false;
+        if (!chapterNum || externalChapter) {
+            return { added: false };
+        }
 
         const chapterNumFloat = parseFloat(chapterNum);
-        if (isNaN(chapterNumFloat)) return false;
+        if (isNaN(chapterNumFloat)) {
+            return { added: false };
+        }
 
-        if (startChapter != null && chapterNumFloat < startChapter) return false;
-        if (endChapter != null && chapterNumFloat > endChapter) return false;
+        if (seenChapters.has(chapterNum)) {
+            return { added: false };
+        }
+
+        // Chapter range filtering
+        if (startChapter != null && chapterNumFloat < startChapter) {
+            return { added: false };
+        }
+        if (endChapter != null && chapterNumFloat > endChapter) {
+            return { added: false };
+        }
+
+        // Volume filtering - FIXED: Properly exclude chapters without volume info when volume filtering is active
+        if (startVolume != null || endVolume != null) {
+            if (volumeNum) {
+                const volumeNumFloat = parseFloat(volumeNum);
+                if (!isNaN(volumeNumFloat)) {
+                    if (startVolume != null && volumeNumFloat < startVolume) {
+                        return { added: false };
+                    }
+                    if (endVolume != null && volumeNumFloat > endVolume) {
+                        return { added: false };
+                    }
+                } else {
+                    return { added: false };
+                }
+            } else {
+                // Exclude chapters without volume info when volume filtering is active
+                return { added: false };
+            }
+        }
 
         chapterList.push([chapterId, chapterNum]);
         seenChapters.add(chapterNum);
-        return true;
+        
+        return { added: true };
     }
 }
 
 async function handleBatchDownload(mangaId, language, signal) {
     const startChapter = parseFloat(document.getElementById('startChapter').value) || null;
     const endChapter = parseFloat(document.getElementById('endChapter').value) || null;
+    const startVolume = parseFloat(document.getElementById('startVolume').value) || null;
+    const endVolume = parseFloat(document.getElementById('endVolume').value) || null;
 
     const statusContainer = document.getElementById('chapterStatus');
-    statusContainer.innerHTML = ''; // Clear any previous messages
+    statusContainer.innerHTML = '';
 
     const chapterStatusElement = document.createElement('div');
     statusContainer.appendChild(chapterStatusElement);
@@ -269,24 +305,65 @@ async function handleBatchDownload(mangaId, language, signal) {
         chapterStatusElement.textContent = message;
     }
 
-    try {
-        updateChapterStatus('Getting chapter list...');
-        const chapters = await getChapterList(mangaId, startChapter, endChapter, language, signal);
+    updateChapterStatus('Getting chapter list...');
+    const chapters = await getChapterList(mangaId, startChapter, endChapter, startVolume, endVolume, language, signal);
+    
+    const results = {
+        successful: [],
+        failed: []
+    };
 
-        for (let i = 0; i < chapters.length; i++) {
-            updateChapterStatus(`Downloading chapter ${i + 1} of ${chapters.length}`);
-            await downloadChapter(chapters[i], language, signal);
-        }
+    for (let i = 0; i < chapters.length; i++) {
+        const chapter = chapters[i];
+        const maxRetries = 3;
+        let retryCount = 0;
+        let success = false;
 
-        updateChapterStatus('All chapters downloaded!');
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            updateChapterStatus('Batch Download Aborted.');
-        } else {
-            updateChapterStatus(`Error: ${error.message}`);
+        while (!success && retryCount < maxRetries) {
+            try {
+                updateChapterStatus(`Downloading chapter ${chapter.num} (${i + 1}/${chapters.length})${retryCount > 0 ? ` - Retry ${retryCount}` : ''}`);
+                
+                const result = await downloadChapter(chapter.id, language, signal, i + 1, chapters.length);
+                
+                if (result.success) {
+                    success = true;
+                    results.successful.push({
+                        chapterNum: chapter.num,
+                        fileName: result.fileName
+                    });
+                }
+            } catch (error) {
+                retryCount++;
+                
+                if (error.name === 'AbortError') {
+                    updateChapterStatus('Batch Download Aborted.');
+                    return;
+                }
+                
+                if (retryCount < maxRetries) {
+                    updateChapterStatus(`Retrying chapter ${chapter.num} (${retryCount}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    results.failed.push({
+                        chapterNum: chapter.num,
+                        error: error.message
+                    });
+                }
+            }
         }
-        console.error(error);
     }
+
+    const successCount = results.successful.length;
+    const failedCount = results.failed.length;
+    const totalCount = chapters.length;
+
+    let finalMessage = `Done! ${successCount}/${totalCount} chapters successful`;
+    if (failedCount > 0) {
+        finalMessage += `, ${failedCount} failed`;
+    }
+
+    updateStatus('');
+    updateChapterStatus(finalMessage);
 }
 
 document.getElementById('download').addEventListener('click', async function () {
@@ -300,7 +377,6 @@ document.getElementById('download').addEventListener('click', async function () 
             const url = document.getElementById('mangaUrl').value.trim();
             const language = document.getElementById('language').value.trim() || 'en';
 
-            // Regenerate AbortController for new operations
             abortController = new AbortController();
             const signal = abortController.signal;
 
@@ -312,7 +388,16 @@ document.getElementById('download').addEventListener('click', async function () 
                 await handleBatchDownload(mangaId, language, signal);
             } else if (chapterMatch) {
                 const chapterId = chapterMatch[1];
-                await downloadChapter(chapterId, language, signal);
+                try {
+                    await downloadChapter(chapterId, language, signal);
+                    // Status is already updated inside downloadChapter for single downloads
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        updateStatus('Download Aborted.');
+                    } else {
+                        updateStatus(`Error: ${error.message}`);
+                    }
+                }
             } else {
                 updateStatus('Invalid URL format');
             }
@@ -326,7 +411,6 @@ document.getElementById('download').addEventListener('click', async function () 
             resetButton(button);
         }
     } else {
-        // Abort signal when "Stop!" is clicked
         abortController.abort();
         resetButton(button);
     }
