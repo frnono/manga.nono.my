@@ -274,3 +274,33 @@ body {
         opacity: 1;
     }
 }
+
+/* Donation footer */
+.donation-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 20px;
+    text-align: center;
+    background: linear-gradient(to top, var(--bg-color) 0%, var(--bg-color) 70%, rgba(30, 28, 36, 0) 100%);
+    z-index: 1000;
+}
+
+.donation-footer p {
+    margin: 0;
+    font-size: 0.85em;
+    color: #999;
+}
+
+.donation-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+
+.donation-footer a:hover {
+    color: var(--light-purple);
+    text-decoration: underline;
+}
